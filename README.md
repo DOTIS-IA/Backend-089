@@ -188,3 +188,6 @@ git commit -m "fix(sync): agregar timeout a requests"
 # 3) Push y Pull Request
 git push origin feature/sync-improvements
 ```
+
+
+Prueba comit
