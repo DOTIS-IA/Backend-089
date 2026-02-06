@@ -173,6 +173,10 @@ fix/<nombre>      → Corrección de bugs
 docs/<nombre>     → Documentación
 ```
 
+
+
+
+
 ### Proceso de contribución
 
 ```bash
