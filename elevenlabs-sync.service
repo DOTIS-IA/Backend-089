@@ -1,0 +1,29 @@
+[Unit]
+Description=ElevenLabs Conversation Sync Daemon (MAS-089)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=doti-ia
+Group=doti-ia
+WorkingDirectory=/home/doti-ia/mas-089-sync
+
+# Comando para ejecutar
+ExecStart=/home/doti-ia/mas-089-sync/venv/bin/python /home/doti-ia/mas-089-sync/sync_daemon.py
+
+# Reinicio automático
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=elevenlabs-sync
+
+# Límites de recursos (opcional)
+# MemoryLimit=512M
+# CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,6 @@
 import psycopg2
+
+# Importación de los otros archivos
 from db import get_db_connection
 from elevenlabs_client import (
     get_conversation_history,
@@ -17,10 +19,9 @@ def insert_agente(cursor, id_agente, nombre=None):
     """, (id_agente, nombre))
     
 def insert_situacion(cursor, id_conversacion, conv_data):
-    """
-    Inserta o actualiza los datos analizados de la conversación. 
-    Si ya existe un reporte para esa conversación, lo actualiza.
-    """
+    """ Inserta o actualiza los datos analizados de la conversación. 
+        Si ya existe un reporte para esa conversación, lo actualiza. """
+    
     cursor.execute('''
         INSERT INTO reportes (id_conversacion, id_extorsion, modo, tiempo, lugar)
         VALUES (%s, %s, %s, %s, %s)
@@ -42,7 +43,7 @@ def insert_situacion(cursor, id_conversacion, conv_data):
     return result[0] if result else None
 
 def insert_conversacion(cursor, conv_data):
-    """Insertar conversación en la base de datos y retornar el ID generado"""
+    """ Insertar conversación en la base de datos y retornar el ID generado """
     
     cursor.execute("""
         INSERT INTO conversaciones
@@ -67,62 +68,73 @@ def insert_conversacion(cursor, conv_data):
     return result[0] if result else None
 
 def sync_all_conversations():
-    """Sincronizar todas las conversaciones de ElevenLabs a PostgreSQL"""
+    """ Sincronizar todas las conversaciones de ElevenLabs a PostgreSQL """
     
-    print("Iniciando sincronización de conversaciones...")
+    print("🔄 Iniciando sincronización de conversaciones...")
     
     conversations = get_conversation_history()
     
     if not conversations:
-        print("No se encontraron conversaciones")
+        print("ℹ️  No se encontraron conversaciones")
         return
     
     with get_db_connection() as conn:
         cursor = conn.cursor()
         synced_count = 0
+        error_count = 0
         
-        for conv_summary in conversations:
+        for idx, conv_summary in enumerate(conversations, 1):
             conv_id = conv_summary.get("conversation_id")
             agent_id = conv_summary.get("agent_id")
             
             if not conv_id or not agent_id:
+                print(f"⚠️  [{idx}] Conversación sin ID válido, omitiendo...")
                 continue
             
-            print(f"\nProcesando conversación: {conv_id}")
+            print(f"\n[{idx}/{len(conversations)}] Procesando: {conv_id}")
             
-            # Obtener y parsear detalles
-            conv_details = get_conversation_details(conv_id)
-            agent_details = get_agent_details(agent_id)
-            
-            if not conv_details:
-                print(f"No se pudieron obtener detalles de {conv_id}")
-                continue
-            
-            conv_data = parse_conversation(conv_details)
-            agent_data = parse_agent(agent_details)
-            
-            # 1. Insertar/Actualizar Agente
-            if conv_data.get("id_agente") and agent_data.get("nombre_agente"):
-                insert_agente(cursor, conv_data["id_agente"], agent_data["nombre_agente"])
-            
-            # 2. Insertar Conversación
-            id_conversacion = insert_conversacion(cursor, conv_data)
-            
-            if id_conversacion:
-                # 3. Insertar Situación (vinculada a la conversación)
-                try:
-                    insert_situacion(cursor, id_conversacion, conv_data)
-                    print(f"✅ Datos de situación guardados.")
-                except Exception as e:
-                    print(f"⚠️ Error al insertar situación: {e}")
+            try:
+                # Obtener detalles
+                conv_details = get_conversation_details(conv_id)
+                agent_details = get_agent_details(agent_id)
                 
-                print(f"Conversación guardada con ID: {id_conversacion}")
-                synced_count += 1
-            else:
-                print(f"Conversación ya procesada anteriormente: {conv_id}")
+                if not conv_details:
+                    print(f"❌ No se pudieron obtener detalles")
+                    error_count += 1
+                    continue
+                
+                conv_data = parse_conversation(conv_details)
+                agent_data = parse_agent(agent_details)
+                
+                # 1. Insertar/Actualizar Agente
+                if conv_data.get("id_agente") and agent_data.get("nombre_agente"):
+                    insert_agente(cursor, conv_data["id_agente"], agent_data["nombre_agente"])
+                    print(f"  ✓ Agente: {agent_data['nombre_agente']}")
+                
+                # 2. Insertar Conversación
+                id_conversacion = insert_conversacion(cursor, conv_data)
+                print(f"  ✓ Conversación ID: {id_conversacion}")
+                
+                # 3. Insertar Reporte
+                if id_conversacion:
+                    folio = insert_situacion(cursor, id_conversacion, conv_data)
+                    print(f"  ✓ Reporte generado: {folio}")
+                    print(f"     - Modo: {conv_data.get('forma')}")
+                    print(f"     - Lugar: {conv_data.get('lugar')}")
+                    print(f"     - Tiempo: {conv_data.get('tiempo')}")
+                    synced_count += 1
+                
+            except Exception as e:
+                print(f"  ❌ Error: {e}")
+                error_count += 1
+                # No hacer rollback para que las anteriores se guarden
+                continue
         
-        # El commit ocurre aquí automáticamente al salir del bloque 'with'
-        print(f"\n🎉 Sincronización completada: {synced_count} registros procesados")
-
+        print(f"\n{'='*60}")
+        print(f"✅ Sincronización completada")
+        print(f"   • Exitosas: {synced_count}")
+        print(f"   • Errores: {error_count}")
+        print(f"{'='*60}")
+        
 if __name__ == "__main__":
     sync_all_conversations()

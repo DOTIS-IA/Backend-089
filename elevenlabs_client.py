@@ -13,7 +13,7 @@ HEADERS = {
 }
 
 def get_conversation_history():
-    """Obtener historial de conversaciones de ElevenLabs"""
+    """ Obtener historial de conversaciones de ElevenLabs """
     
     url = f"{BASE_URL}/convai/conversations"
     try:
@@ -28,12 +28,7 @@ def get_conversation_history():
         return []
 
 def get_conversation_details(conversation_id):
-    """
-    
-    Obtener detalles completos de una conversación específica
-    
-    :param conversation_id: ID de conversación Elevenlabs
-    """
+    """ Obtener detalles completos de una conversación específica """
     
     url = f"{BASE_URL}/convai/conversations/{conversation_id}"
     try:
@@ -45,12 +40,7 @@ def get_conversation_details(conversation_id):
         return None
 
 def extraer_dato_collection(data_collection, key):
-    """
-    Extrae el valor limpio del JSON de Data Collection
-    
-    :param data_collection: Dato requerido
-    :param key: Key
-    """
+    """ Extrae el valor limpio del JSON de Data Collection """
     
     item = data_collection.get(key)
     if isinstance(item, dict):
@@ -58,11 +48,7 @@ def extraer_dato_collection(data_collection, key):
     return item
 
 def parse_conversation(conv_data):
-    """
-    Extraer datos relevantes incluyendo forma, Tiempo y Lugar
-    
-    :param conv_data: Datos para extraer forma, tiempo y lugar
-    """
+    """ Extraer datos relevantes incluyendo forma, Tiempo y Lugar """
     
     metadata = conv_data.get("metadata", {})
     analysis = conv_data.get("analysis", {})
@@ -111,11 +97,8 @@ def parse_conversation(conv_data):
 
 
 def get_agent_details(agent_id):
-    """
-    Obtener detalles completos de un agente específico
-
-    :param agent_id: ID del agente de Elevenlabs
-    """
+    """ Obtener detalles completos de un agente específico """
+    
     url = f"{BASE_URL}/convai/agents/{agent_id}"
     
     try:
@@ -129,11 +112,8 @@ def get_agent_details(agent_id):
         return None
 
 def parse_agent(agent_data):
-    """
-    Extraer datos relevantes del agente
+    """ Extraer datos relevantes del agente """
     
-    :param agent_data: Datos del agente
-    """
     if not agent_data:
         return {"id_agente": None, "nombre_agente": "Desconocido"}
         
@@ -142,20 +122,22 @@ def parse_agent(agent_data):
         "nombre_agente": agent_data.get("name")
     }
 
-if __name__ == "__main__":
-    print("🔍 Probando conexión y extracción completa...")
-    conversations = get_conversation_history()
+# ----- DESCOMENTAR SI SOLO QUIERES PRBAR EL ARCHIVO -----
+
+# if __name__ == "__main__":
+#     print("🔍 Probando conexión y extracción completa...")
+#     conversations = get_conversation_history()
     
-    if conversations:
-        conv = conversations[0]
-        details = get_conversation_details(conv.get('conversation_id'))
+#     if conversations:
+#         conv = conversations[0]
+#         details = get_conversation_details(conv.get('conversation_id'))
         
-        if details:
-            parsed = parse_conversation(details)
-            print(f"\n✅ Datos de Situación Extraídos:")
-            print(f"forma: {parsed['forma']}")
-            print(f"Lugar: {parsed['lugar']}")
-            print(f"Tiempo: {parsed['tiempo']}")
-            print(f"ID Extorsión: {parsed['id_extorsion']}")
-            print("-" * 30)
-            print(f"Fecha: {parsed['fecha']} | Inicio: {parsed['hora_inicio']}")
+#         if details:
+#             parsed = parse_conversation(details)
+#             print(f"\n✅ Datos de Situación Extraídos:")
+#             print(f"forma: {parsed['forma']}")
+#             print(f"Lugar: {parsed['lugar']}")
+#             print(f"Tiempo: {parsed['tiempo']}")
+#             print(f"ID Extorsión: {parsed['id_extorsion']}")
+#             print("-" * 30)
+#             print(f"Fecha: {parsed['fecha']} | Inicio: {parsed['hora_inicio']}")
